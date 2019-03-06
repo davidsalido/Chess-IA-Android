@@ -114,14 +114,14 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(getApplicationContext(), "Jaque mate", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Jaque mate al rey", Toast.LENGTH_SHORT).show();
                         }
                     });
                     juegoAcabado = true;
                 } else runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(getApplicationContext(), "Jaque", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "Jaque al rey", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
