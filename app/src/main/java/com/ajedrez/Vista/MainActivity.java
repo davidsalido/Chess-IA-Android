@@ -2,8 +2,12 @@ package com.ajedrez.Vista;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -25,35 +29,42 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivTurno;
     private Tablero tablero;
     private String[] colores = {"blanco","negro"};
-
+    private Punto ultimoPuntoMarcado;
+    private ImageView atras;
+    private boolean jugador1, jugador2;
 
 
     private int idFondo(int i, int j){
         if(i % 2 == 0 && j % 2 == 0)
-            return R.drawable.pineyellow;
+            return R.color.colorAccent;
         if(i % 2 == 0 && j % 2 == 1)
-            return R.drawable.palisandro;
+            return R.color.colorPrimaryDark;
         if(i % 2 == 1 && j % 2 == 0)
-            return R.drawable.palisandro;
+            return R.color.colorPrimaryDark;
         else
-            return R.drawable.pineyellow;
+            return R.color.colorAccent;
     }
 
     private int idFondoMarked(int i, int j){
         if(i % 2 == 0 && j % 2 == 0)
-            return R.drawable.pineyellow_marked;
+            return R.color.colorAccentMarked;
         if(i % 2 == 0 && j % 2 == 1)
-            return R.drawable.palisandro_marked;
+            return R.color.colorPrimary;
         if(i % 2 == 1 && j % 2 == 0)
-            return R.drawable.palisandro_marked;
+            return R.color.colorPrimary;
         else
-            return R.drawable.pineyellow_marked;
+            return R.color.colorAccentMarked;
+
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Intent intent = getIntent();
+        jugador1 = intent.getStringExtra("jugadorblanco").equals("Persona");
+        jugador2 = intent.getStringExtra("jugadornegro").equals("Persona");
 
         ivTurno = findViewById(R.id.ivTurno);
         iv = new ArrayList<>(8);
@@ -83,6 +94,46 @@ public class MainActivity extends AppCompatActivity {
         });
         t.start();
 
+        atras = findViewById(R.id.atras);
+
+        atras.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                askOption().show();
+            }
+        });
+
+    }
+
+    private AlertDialog askOption()
+    {
+        AlertDialog myQuittingDialogBox =new AlertDialog.Builder(this)
+                //set message, title, and icon
+                .setTitle("Menu Principal")
+                .setMessage("¿Quiere ir al menu principal?")
+
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        startActivity(new Intent(MainActivity.this,Principal.class));
+                        dialog.dismiss();
+                        finish();
+                    }
+
+                })
+
+
+
+                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        dialog.dismiss();
+
+                    }
+                })
+                .create();
+        return myQuittingDialogBox;
+
     }
 
     private void jugar(){
@@ -102,11 +153,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             if (turno == 0) {
-                decidirJugada(colores[finalTurno]);
+                if(jugador1)
+                    decidirJugada(colores[finalTurno]);
+                else{
+                    Arbol a = new Arbol(new Tablero(tablero.figuras), colores[turno]);
+                    Movimiento m = a.getMejor();
+                    this.mover(m.origen, m.destino, colores[turno],true);
+                }
             } else {
-                Arbol a = new Arbol(new Tablero(tablero.figuras), colores[turno]);
-                Movimiento m = a.getMejor();
-                this.mover(m.origen, m.destino, colores[turno]);
+                if(jugador2)
+                    decidirJugada(colores[finalTurno]);
+                else{
+                    Arbol a = new Arbol(new Tablero(tablero.figuras), colores[turno]);
+                    Movimiento m = a.getMejor();
+                    this.mover(m.origen, m.destino, colores[turno],true);
+                }
             }
 
             if (tablero.jaque(colorContrario(colores[turno]))) {
@@ -247,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        mover(origen,destino,color);
+        mover(origen,destino,color, false);
     }
 
     public void seleccionarCasilla(int i, int j){
@@ -255,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
         this.selectj = j;
     }
 
-    public void mover(final Punto origen, final Punto destino,final String color){
+    public void mover(final Punto origen, final Punto destino,final String color,final boolean ia){
         Tablero taux = new Tablero(tablero.figuras);
         final int r = tablero.mover(new Movimiento(origen,destino));
 
@@ -274,6 +335,10 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if(ultimoPuntoMarcado != null){
+                    iv.get(ultimoPuntoMarcado.i).get(ultimoPuntoMarcado.j).setBackground(dw.get(ultimoPuntoMarcado.i).get(ultimoPuntoMarcado.j));
+                    ultimoPuntoMarcado = null;
+                }
                 if(r == 0) {
                     Drawable icon = iv.get(origen.i).get(origen.j).getDrawable();
                     iv.get(destino.i).get(destino.j).setImageDrawable(icon);
@@ -282,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if(r == 1) {
                     if(color.equals("blanco")) iv.get(destino.i).get(destino.j).setImageResource(R.drawable.reina_blanco);
-                    else iv.get(destino.i).get(destino.j).setImageResource(R.drawable.reina_blanco);
+                    else iv.get(destino.i).get(destino.j).setImageResource(R.drawable.reina_negro);
                     iv.get(origen.i).get(origen.j).setImageDrawable(null);
                 }
                 else if(r == 2) {
@@ -303,6 +368,10 @@ public class MainActivity extends AppCompatActivity {
                     iv.get(destino.i).get(destino.j).setImageDrawable(null);
                     iv.get(origen.i).get(origen.j).setImageDrawable(null);
                 }
+                if(ia){
+                    iv.get(destino.i).get(destino.j).setBackground(dwMarked.get(destino.i).get(destino.j));
+                    ultimoPuntoMarcado = destino;
+                }
             }
         });
 
@@ -311,5 +380,10 @@ public class MainActivity extends AppCompatActivity {
     private String colorContrario(String color){
         if(color.equals("negro")) return "blanco";
         else return "negro";
+    }
+
+    @Override
+    public void onBackPressed() {
+        //Nothing
     }
 }
